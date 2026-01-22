@@ -40,12 +40,14 @@
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.147 0.004 49.25);
+  --topbar: oklch(74.228% 0.12547 177.051);
   /* resto das variáveis */
 }
 
 .dark {
   --background: oklch(0.147 0.004 49.25);
   --foreground: oklch(0.985 0.001 106.423);
+  --topbar: oklch(74.228% 0.12547 177.051);
   /* resto das variáveis */
 }
 
