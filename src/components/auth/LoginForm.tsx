@@ -10,7 +10,7 @@ export function LoginForm() {
       {/* Lado esquerdo - Form */}
       <div className="w-full md:w-1/2">
         <CardHeader className="text-center py-8">
-          <CardTitle>Entrar em conta existente</CardTitle>
+          <CardTitle className="text-2xl">Entrar em conta existente</CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-4">

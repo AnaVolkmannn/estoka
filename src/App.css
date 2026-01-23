@@ -40,6 +40,16 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-topbar: var(--topbar);
+
+  /* font sizes */
+  --font-xs: 0.75rem; /* 12px */
+  --font-sm: 0.875rem; /* 14px */
+  --font-base: 1rem; /* 16px */
+  --font-lg: 1.125rem; /* 18px */
+  --font-xl: 1.25rem; /* 20px */
+  --font-2xl: 1.5rem; /* 24px */
+  --font-3xl: 1.875rem; /* 30px */
+  --font-4xl: 2.25rem; /* 36px */
 }
 
 /* =========================
@@ -81,6 +91,15 @@
   --font-sans:
     "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
+
+  --text-xs: var(--font-xs);
+  --text-sm: var(--font-sm);
+  --text-base: var(--font-base);
+  --text-lg: var(--font-lg);
+  --text-xl: var(--font-xl);
+  --text-2xl: var(--font-2xl);
+  --text-3xl: var(--font-3xl);
+  --text-4xl: var(--font-4xl);
 }
 
 /* =========================

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import entrarImage from "@/assets/entrar.png";
@@ -10,8 +10,7 @@ export function RegisterForm() {
       {/* Lado esquerdo - Form */}
       <div className="w-full md:w-1/2">
         <CardHeader className="text-center py-10">
-          <CardTitle>Bem vindo!</CardTitle>
-          <CardTitle>Vamos criar sua conta</CardTitle>
+          <CardTitle className="text-2xl">Criar nova conta</CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -19,9 +18,12 @@ export function RegisterForm() {
             Continuar com Google
           </Button>
           <Button className="w-full">Continuar com Email</Button>
-          <Button className="w-full" variant="link">
-            Já tem uma conta?
-          </Button>
+
+          <Link to="/login">
+            <Button className="w-full" variant="link">
+              Já tem uma conta?
+            </Button>
+          </Link>
         </CardContent>
       </div>
       {/* Lado direito - Imagem */}
