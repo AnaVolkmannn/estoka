@@ -52,7 +52,7 @@ export function Topbar() {
           </Link>
 
           <Link to="/register">
-            <Button variant="default">Fazer login</Button>
+            <Button variant="default">Criar conta</Button>
           </Link>
         </div>
       </div>
