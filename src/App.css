@@ -7,7 +7,11 @@
   min-height: 100vh;
 }
 
+/* =========================
+   THEME TOKENS (TAILWIND)
+   ========================= */
 @theme inline {
+  /* radius */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -16,6 +20,7 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
+  /* colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -34,29 +39,112 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-topbar: var(--topbar);
 }
 
+/* =========================
+   LIGHT THEME
+   ========================= */
 :root {
+  color-scheme: light;
+
   --radius: 0.625rem;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.147 0.004 49.25);
-  --topbar: oklch(74.228% 0.12547 177.051);
-  /* resto das variáveis */
+
+  --card: oklch(0.98 0.002 106);
+  --card-foreground: var(--foreground);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+
+  /* verde-água */
+  --primary: oklch(74.228% 0.12547 177.051);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.95 0.01 180);
+  --secondary-foreground: var(--foreground);
+
+  --muted: oklch(0.93 0.005 106);
+  --muted-foreground: oklch(0.45 0.01 106);
+
+  --accent: oklch(0.9 0.04 180);
+  --accent-foreground: var(--foreground);
+
+  --border: oklch(0.9 0.005 106);
+  --input: oklch(0.97 0.002 106);
+  --ring: var(--primary);
+
+  --topbar: oklch(1 0 0);
+
+  --font-sans:
+    "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
 
+/* =========================
+   DARK THEME
+   ========================= */
 .dark {
-  --background: oklch(0.147 0.004 49.25);
+  color-scheme: dark;
+
+  --background: rgb(28, 44, 44); /* seu teste */
   --foreground: oklch(0.985 0.001 106.423);
-  --topbar: oklch(74.228% 0.12547 177.051);
-  /* resto das variáveis */
+
+  --card: oklch(0.2 0.004 49);
+  --card-foreground: var(--foreground);
+
+  --popover: oklch(60.888% 0.09346 182.049);
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(74.228% 0.12547 177.051);
+  --primary-foreground: oklch(0.12 0.02 180);
+
+  --secondary: oklch(0.25 0.01 180);
+  --secondary-foreground: var(--foreground);
+
+  --muted: oklch(0.25 0.004 49);
+  --muted-foreground: oklch(0.7 0.01 106);
+
+  --accent: oklch(0.3 0.04 180);
+  --accent-foreground: var(--foreground);
+
+  --border: oklch(0.3 0.004 49);
+  --input: oklch(0.25 0.004 49);
+  --ring: var(--primary);
+
+  --topbar: oklch(53.839% 0.1328 44.611);
+
+  --font-sans:
+    "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
 
+/* =========================
+   BASE STYLES
+   ========================= */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
 
-  body {
-    @apply bg-background text-foreground;
+  html,
+  body,
+  #root {
+    height: 100%;
   }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+}
+
+/* =========================
+   UX
+   ========================= */
+html {
+  scroll-behavior: smooth;
 }

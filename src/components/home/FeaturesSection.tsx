@@ -17,7 +17,7 @@ const features = [
 
 export function FeaturesSection() {
   return (
-    <section className="py-24">
+    <section id="features" className="py-24">
       <div className="mx-auto max-w-6xl px-6">
         <h2 className="mb-12 text-center text-3xl font-semibold">
           Tudo o que você precisa para organizar seu estoque

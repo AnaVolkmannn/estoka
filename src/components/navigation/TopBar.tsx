@@ -8,7 +8,6 @@ import logoDark from "@/assets/logo/logo-dark.png";
 
 export function Topbar() {
   const { theme } = useTheme();
-
   const logo = theme === "dark" ? logoDark : logoLight;
 
   return (
@@ -16,20 +15,29 @@ export function Topbar() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Estoka" className="h-6 w-auto" />
+          <img src={logo} alt="Estoka" className="h-11 w-auto" />
         </Link>
 
         {/* Links */}
         <nav className="hidden gap-6 md:flex">
           <a
             href="#features"
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="
+              text-sm transition-colors
+              text-(--nav-link)
+              hover:text-(--nav-link-hover)
+            "
           >
             Funcionalidades
           </a>
+
           <a
             href="#how-it-works"
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="
+              text-sm transition-colors
+              text-(--nav-link)
+              hover:text-(--nav-link-hover)
+            "
           >
             Como funciona
           </a>
@@ -40,11 +48,11 @@ export function Topbar() {
           <ModeToggle />
 
           <Link to="/login">
-            <Button variant="ghost">Entrar</Button>
+            <Button variant="outline">Entrar</Button>
           </Link>
 
           <Link to="/register">
-            <Button>Fazer Login</Button>
+            <Button variant="default">Fazer login</Button>
           </Link>
         </div>
       </div>
