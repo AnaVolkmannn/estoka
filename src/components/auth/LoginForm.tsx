@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 
 import loginImage from "@/assets/login.png";
 
@@ -11,16 +12,24 @@ export function LoginForm() {
       <div className="w-full md:w-1/2">
         <CardHeader className="text-center py-8">
           <CardTitle className="text-2xl">Entrar em conta existente</CardTitle>
+          <CardTitle className="text-sm">Digite seu email e senha para acessar sua conta</CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-4">
+          
           <Input placeholder="Email" type="email" />
           <Input placeholder="Senha" type="password" />
 
-          <Button className="w-full">Entrar</Button>
+          <Link to="/dashboard">
+            <Button className="w-full">Entrar</Button>
+          </Link>
 
-          <Button className="w-full" variant="outline">
-            Login com Google
+          <CardDescription className="text-sm text-center">
+           ou
+          </CardDescription>
+
+          <Button className="w-full" variant={"outline"}>
+            Entrar com Google
           </Button>
 
           <Button className="px-0 text-left" variant="link">

@@ -15,7 +15,7 @@ export function HeroSection() {
 
           <p className="mt-4 text-muted-foreground max-w-xl">
             O Estoka ajuda pequenos negócios a organizar produtos, entradas,
-            saídas e gerar estatísticas.
+            saídas e gerar estatísticas detalhadas de forma simples e eficiente. Tudo na palma da sua mão.
           </p>
 
           <div className="mt-8">

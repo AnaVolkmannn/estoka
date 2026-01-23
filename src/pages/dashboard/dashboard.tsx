@@ -1,17 +1,11 @@
-//Explicar o produto
-//Botão Entrar / Criar conta
-import { HeroSection } from "../../components/home/HeroSection";
-import { FeaturesSection } from "../../components/home/FeaturesSection";
-import { HowItWorksSection } from "../../components/home/HowItWorksSection";
-import { CallToAction } from "../../components/home/CallToAction";
-
-export default function Home() {
+export default function DashboardHome() {
   return (
     <>
-      <HeroSection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <CallToAction />
+      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <p className="mt-4 text-muted-foreground">
+        Bem-vindo ao seu painel de controle. Aqui você pode gerenciar seu
+        estoque, visualizar estatísticas e muito mais.
+      </p>  
     </>
   );
 }

@@ -18,31 +18,6 @@ export function Topbar() {
           <img src={logo} alt="Estoka" className="h-11 w-auto" />
         </Link>
 
-        {/* Links */}
-        <nav className="hidden gap-6 md:flex">
-          <a
-            href="#features"
-            className="
-              text-sm transition-colors
-              text-(--nav-link)
-              hover:text-(--nav-link-hover)
-            "
-          >
-            Funcionalidades
-          </a>
-
-          <a
-            href="#how-it-works"
-            className="
-              text-sm transition-colors
-              text-(--nav-link)
-              hover:text-(--nav-link-hover)
-            "
-          >
-            Como funciona
-          </a>
-        </nav>
-
         {/* Actions */}
         <div className="flex items-center gap-4">
           <ModeToggle />
