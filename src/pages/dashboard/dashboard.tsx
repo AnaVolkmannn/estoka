@@ -1,11 +1,9 @@
-export default function DashboardHome() {
+import DashboardHome from "@/components/dashboard/Home";
+
+export default function Dashboard() {
   return (
-    <>
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p className="mt-4 text-muted-foreground">
-        Bem-vindo ao seu painel de controle. Aqui você pode gerenciar seu
-        estoque, visualizar estatísticas e muito mais.
-      </p>  
-    </>
+    <main className="flex-1 p-6">
+       <DashboardHome />
+    </main>
   );
 }

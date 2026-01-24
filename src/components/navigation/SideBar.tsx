@@ -18,10 +18,13 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 
+import logoLight from "@/assets/logo/logo-light.png";
+import logoDark from "@/assets/logo/logo-dark.png";
+import { useTheme } from "@/components/theme-provider";
+import { ModeToggle } from "../mode-toggle"
 /* ======================================================
    MENU CONFIG
 ====================================================== */
-
 const menuItems = [
   {
     label: "Dashboard",
@@ -35,7 +38,7 @@ const menuItems = [
   },
   {
     label: "Fornecedores",
-    to: "/dashboard/fornecedores",
+    to: "/dashboard/Fornecedores",
     icon: Truck,
   },
   {
@@ -85,13 +88,13 @@ export function DashboardSidebar() {
 ====================================================== */
 
 function SidebarContent() {
+  const { theme } = useTheme();
+  const logo = theme === "dark" ? logoDark : logoLight;
   return (
     <div className="flex h-full flex-col">
       {/* LOGO */}
-      <div className="px-6 py-4 text-lg font-semibold">
-        Estoka
-      </div>
-
+      <img src={logo} alt="Estoka" className="h-auto w-auto px-14 pt-2" />
+    
       <Separator />
 
       {/* MENU */}
@@ -105,6 +108,7 @@ function SidebarContent() {
 
       {/* FOOTER */}
       <div className="p-4">
+        <ModeToggle />
         <Button
           variant="ghost"
           className="w-full justify-start gap-2"
