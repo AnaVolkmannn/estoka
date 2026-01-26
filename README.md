@@ -1,32 +1,105 @@
-# estoka
+## 📊 Estrutura de Pages do Dashboard — Estoka
 
-- Páginas controlam fluxo
-- Layouts controlam estrutura
-- Componentes controlam UI
+Esta seção descreve apenas as páginas do dashboard (núcleo do sistema), suas responsabilidades e o papel de cada uma no fluxo do usuário.
 
-sistema deve permitir
-- lançar produtos por NF
-- lançar produtos manualmente
+---
 
-precisa ter
-- area de cadastro de fornecedor > produto
- um fornecedor pode ter varios produtos
+### 🏠 Home — Relatório Geral (`/dashboard/home`)
 
- um produto pode ter apenas um fornecedor
+**Objetivo:**  
+Exibir uma visão estratégica do mês atual, sem permitir edições.
 
- o objetivo do lançamento das notas é manter os valores atualizados mensalmente
- quantidade é lançada manualmente
- se num mes não foi lançado nota, permanece o valor do mês anterior
+**Responsabilidades:**
+- Mostrar faturamento total do mês
+- Exibir total de peças movimentadas
+- Listar faturamento por produto
+- (Futuro) Gráficos de evolução mensal
 
- precisa aparecer quantidade de peças em estoque no mes atual
- permitir filtrar por período
+**Não faz:**
+- Não edita valores
+- Não lança quantidades
+- Não cadastra dados
 
- - na tabela aparece
- nome do produto
- valor unitario
- ipi
- frete
- quantidade atual
- valor total em mercadoria
+---
 
- - precisa ter um local pra editar o valor e produto manualmente
+### 📊 Relatórios (`/dashboard/relatorios`)
+
+**Objetivo:**  
+Permitir análise histórica de faturamento e estoque.
+
+**Responsabilidades:**
+- Filtro por período (mês/ano)
+- Exibição de totais mensais
+- Detalhamento por produto
+- Comparação entre meses
+
+**Não faz:**
+- Não altera dados operacionais
+
+---
+
+### 📅 Lançamentos (`/dashboard/lancamentos`)
+
+**Objetivo:**  
+Tela operacional para lançamento mensal de quantidades.
+
+**Responsabilidades:**
+- Selecionar mês e ano
+- Informar quantidade por produto
+- Salvar lançamentos do período
+- Herdar valores do mês anterior quando não houver lançamento
+
+**Não faz:**
+- Não edita custos de produtos
+
+---
+
+### 📦 Produtos (`/dashboard/produtos`)
+
+**Objetivo:**  
+Gerenciar os dados financeiros dos produtos.
+
+**Responsabilidades:**
+- Cadastrar novos produtos
+- Editar valor unitário
+- Editar IPI
+- Editar frete
+- Vincular produto a fornecedor
+
+**Não faz:**
+- Não altera quantidades mensais
+
+---
+
+### 🏭 Fornecedores (`/dashboard/fornecedores`)
+
+**Objetivo:**  
+Organizar fornecedores e seus produtos associados.
+
+**Responsabilidades:**
+- Listar fornecedores
+- Exibir produtos vinculados a cada fornecedor
+- Criar e editar fornecedores
+- Ajustar vínculo produto ↔ fornecedor
+
+**Não faz:**
+- Não altera valores financeiros
+- Não lança quantidades
+
+---
+
+## 🎯 Filosofia de Separação
+
+| Área | Função |
+|-----|-------|
+Relatórios | Visualização |
+Lançamentos | Operacional |
+Produtos | Financeiro |
+Fornecedores | Organizacional |
+
+Essa separação mantém o sistema simples, seguro e escalável.
+
+
+----------------------------------------
+### Implementações futuras:
+- Alterar valores automaticamente por meio do XML da NF.
