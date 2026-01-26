@@ -1,0 +1,21 @@
+.ag-theme-quartz {
+  --ag-font-family: Inter, system-ui, sans-serif;
+  --ag-font-size: 14px;
+
+  --ag-foreground-color: rgb(255, 255, 255); /* slate-900 */
+  --ag-background-color: rgb(28, 44, 44);
+
+  --ag-header-background-color: rgb(35, 145, 130); /* slate-50 */
+  --ag-header-foreground-color: rgb(195, 204, 226);
+
+  --ag-row-hover-color: rgb(36, 109, 105); /* slate-100 */
+
+  --ag-border-color: rgb(22, 117, 105); /* slate-200 */
+
+  --ag-selected-row-background-color: rgb(52, 70, 94); /* blue-100 */
+
+  --ag-odd-row-background-color: rgb(20, 56, 51);
+}
+.ag-theme-quartz .ag-header-cell {
+  border-right: 1px solid var(--ag-border-color);
+}

@@ -5,8 +5,6 @@ import {
   LayoutDashboard,
   Package,
   Truck,
-  FileText,
-  ClipboardList,
   LogOut,
 } from "lucide-react"
 
@@ -40,16 +38,6 @@ const menuItems = [
     label: "Fornecedores",
     to: "/dashboard/Fornecedores",
     icon: Truck,
-  },
-  {
-    label: "Lançar NF",
-    to: "/dashboard/lancamentos/nf",
-    icon: FileText,
-  },
-  {
-    label: "Lançamento manual",
-    to: "/dashboard/lancamentos/manual",
-    icon: ClipboardList,
   },
 ]
 

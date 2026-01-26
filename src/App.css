@@ -69,7 +69,7 @@
   --radius: 0.625rem;
 
   --background: oklch(1 0 0);
-  --foreground: oklch(0.147 0.004 49.25);
+  --foreground: oklch(14.69% 0.00412 49.1);
 
   --card: oklch(0.98 0.002 106);
   --card-foreground: var(--foreground);
