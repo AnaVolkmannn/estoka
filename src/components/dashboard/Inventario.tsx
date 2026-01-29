@@ -1,86 +1,106 @@
 import { useState } from "react"
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-type Produto = {
-  id: number
-  nome: string
-  medida: string
-}
-
-type LinhaInventario = Produto & {
-  quantidade: string
-}
-
-const mockProdutos: Produto[] = [
-  { id: 1, nome: "Parafuso MAQ", medida: "un" },
-  { id: 2, nome: "Calça B", medida: "un" },
-  { id: 3, nome: "Jaqueta C", medida: "kg" },
-  { id: 4, nome: "Tecido Azul", medida: "m" },
-  { id: 5, nome: "Óleo Lubrificante", medida: "l" },
+// 🔧 MOCK DOS PRODUTOS (depois vem do backend)
+const produtosMock = [
+  { id: 1, nome: "Arroz 5kg", unidade: "kg" },
+  { id: 2, nome: "Feijão", unidade: "kg" },
+  { id: 3, nome: "Óleo de soja", unidade: "un" },
+  { id: 4, nome: "Açúcar", unidade: "kg" },
+  { id: 5, nome: "Açúcar", unidade: "kg" },
+  { id: 6, nome: "Açúcar", unidade: "kg" },
+  { id: 7, nome: "Açúcar", unidade: "kg" },
+  { id: 8, nome: "Açúcar", unidade: "kg" },
 ]
 
-export default function LancarInventario() {
-  const [linhas, setLinhas] = useState<LinhaInventario[]>(
-    mockProdutos.map(p => ({ ...p, quantidade: "" }))
-  )
+export default function InventarioPage() {
+  // 📅 Mês atual automático (YYYY-MM)
+  const mesAtual = new Date().toISOString().slice(0, 7)
 
-  function atualizarQuantidade(id: number, valor: string) {
-    setLinhas(prev =>
-      prev.map(l =>
-        l.id === id ? { ...l, quantidade: valor } : l
-      )
-    )
+  const [periodo, setPeriodo] = useState(mesAtual)
+
+  const [quantidades, setQuantidades] = useState<Record<number, number>>({})
+
+  function atualizarQuantidade(id: number, valor: number) {
+    setQuantidades((prev) => ({
+      ...prev,
+      [id]: valor,
+    }))
+  }
+
+  function salvarInventario() {
+    const payload = produtosMock.map((produto) => ({
+      produtoId: produto.id,
+      periodo,
+      quantidade: quantidades[produto.id] || 0,
+    }))
+
+    console.log("Inventário enviado:", payload)
   }
 
   return (
-    <div className="min-h-screen p-4 flex justify-center">
-      <Card className="w-full max-w-lg">
+  <div className="p-4 flex justify-center">
+    <div className="w-full max-w-md space-y-4">
+
+      {/* 🧾 Header */}
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold">Lançar Inventário</h1>
+        <p className="text-sm text-muted-foreground">
+          Informe as quantidades de cada produto no período selecionado
+        </p>
+      </div>
+
+      {/* 📋 Card */}
+      <Card>
         <CardHeader>
-          <CardTitle>Lançar inventário</CardTitle>
+          <CardTitle>Período de lançamento</CardTitle>
+
+          <Input
+            type="month"
+            value={periodo}
+            onChange={(e) => setPeriodo(e.target.value)}
+            className="max-w-40"
+          />
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
 
-          <div className="divide-y rounded-md border">
-
-            {linhas.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center gap-3 p-3"
-              >
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    {item.nome}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Unidade: {item.medida}
-                  </p>
-                </div>
-
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  className="w-24 text-right"
-                  placeholder="0"
-                  value={item.quantidade}
-                  onChange={(e) =>
-                    atualizarQuantidade(item.id, e.target.value)
-                  }
-                />
+          {produtosMock.map((produto) => (
+            <div
+              key={produto.id}
+              className="grid grid-cols-3 items-center gap-2 border-b pb-2 last:border-none"
+            >
+              <div className="col-span-2">
+                <p className="font-medium">{produto.nome}</p>
+                <p className="text-xs text-muted-foreground">
+                  Unidade: {produto.unidade}
+                </p>
               </div>
-            ))}
 
-          </div>
-
-          <Button className="w-full">
-            Salvar inventário
-          </Button>
+              <Input
+                type="number"
+                min={0}
+                placeholder="0"
+                className="text-right"
+                value={quantidades[produto.id] ?? ""}
+                onChange={(e) =>
+                  atualizarQuantidade(produto.id, Number(e.target.value))
+                }
+              />
+            </div>
+          ))}
 
         </CardContent>
       </Card>
+
+      <Button className="w-full" onClick={salvarInventario}>
+        Salvar inventário
+      </Button>
+
     </div>
-  )
+  </div>
+)
 }
