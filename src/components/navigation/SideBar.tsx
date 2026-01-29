@@ -4,8 +4,9 @@ import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
   Package,
-  Truck,
   LogOut,
+  BookMarked,
+  ChartBarDecreasing,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -35,9 +36,14 @@ const menuItems = [
     icon: Package,
   },
   {
-    label: "Fornecedores",
-    to: "/dashboard/Fornecedores",
-    icon: Truck,
+    label: "Relatórios",
+    to: "/dashboard/Relatorios",
+    icon: ChartBarDecreasing,
+  },
+   {
+    label: "Lançar inventário",
+    to: "/dashboard/Inventario",
+    icon: BookMarked,
   },
 ]
 
@@ -57,7 +63,7 @@ export function DashboardSidebar() {
       <div className="md:hidden">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon-xs">
               ☰
             </Button>
           </SheetTrigger>

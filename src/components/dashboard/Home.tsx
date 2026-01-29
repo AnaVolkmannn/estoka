@@ -1,14 +1,27 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function DashboardHome() {
   return (
     <div className="space-y-6">
-      {/* Título */}
-      <div>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Visão geral do sistema
-        </p>
+      
+      {/* Header com ações */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            Visão geral do sistema
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <Button variant="outline">
+            + Novo produto
+          </Button>
+          <Button>
+            + Novo inventário
+          </Button>
+        </div>
       </div>
 
       {/* Cards pequenos (KPIs) */}

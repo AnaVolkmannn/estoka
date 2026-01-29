@@ -5,7 +5,8 @@ import Home from "@/pages/home/home";
 import Login from "@/pages/auth/login";
 import Register from "@/pages/auth/register";
 import Dashboard from "@/pages/dashboard/dashboard";
-import Fornecedores from "@/components/dashboard/Fornecedores";
+import Relatorios from "@/components/dashboard/Relatorios";
+import Inventario from "@/components/dashboard/Inventario";
 import ProdutosPage from "@/components/dashboard/Produtos";
 
 
@@ -22,8 +23,9 @@ export function AppRoutes() {
       {/* Rotas do dashboard */}
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/dashboard/Fornecedores" element={<Fornecedores />} />
+        <Route path="/dashboard/Relatorios" element={<Relatorios />} />
         <Route path="/dashboard/Produtos" element={<ProdutosPage/>} />
+        <Route path="/dashboard/Inventario" element={<Inventario />} />
       </Route>
     </Routes>
   );
