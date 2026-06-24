@@ -22,6 +22,7 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import Add from '@mui/icons-material/Add'
 import Book from '@mui/icons-material/Book'
+import GroupAdd from '@mui/icons-material/GroupAdd'
 import { useColorMode } from '@/context/ThemeContext';
 
 const DRAWER_WIDTH = 240;
@@ -29,7 +30,8 @@ const DRAWER_WIDTH = 240;
 const navItems = [
   { label: 'Dashboard', icon: <DashboardIcon /> },
   { label: 'Lançar Inventário', icon: <Add/> },
-  { label: 'Cadastrar produtos', icon: <Book /> },
+  { label: 'Produtos', icon: <Book /> },
+  { label: 'Fornecedores', icon: <GroupAdd /> },
   { label: 'Configurações', icon: <SettingsIcon /> },
 ];
 
