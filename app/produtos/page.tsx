@@ -18,13 +18,22 @@ import {
   IconButton,
   InputAdornment,
   MenuItem,
+  Paper,
   Skeleton,
   Snackbar,
   Alert,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -47,7 +56,7 @@ interface Product {
   ipi?: number;
   frete?: number;
   unidade: string;
-  fornecedorId: number; // ✅ referência por ID
+  fornecedorId: number;
 }
 
 type ProductForm = Omit<Product, 'id'>;
@@ -91,7 +100,76 @@ const formatBRL = (v: number) =>
 const formatPct = (v?: number) =>
   v != null ? `${v.toFixed(2)}%` : '—';
 
-// ─── Card de produto ──────────────────────────────────────────────────────────
+// ─── Ações compartilhadas ─────────────────────────────────────────────────────
+
+function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+  return (
+    <>
+      <Tooltip title="Editar">
+        <IconButton size="small" onClick={onEdit}>
+          <EditIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Excluir">
+        <IconButton size="small" color="error" onClick={onDelete}>
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    </>
+  );
+}
+
+// ─── Tabela desktop ───────────────────────────────────────────────────────────
+
+function ProductTable({
+  products,
+  fornecedores,
+  onEdit,
+  onDelete,
+}: {
+  products: Product[];
+  fornecedores: Fornecedor[];
+  onEdit: (p: Product) => void;
+  onDelete: (p: Product) => void;
+}) {
+  return (
+    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell sx={{ fontWeight: 700 }}>Nome</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Fornecedor</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Preço</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>IPI</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Frete</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Unidade</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700 }}>Ações</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {products.map((p) => {
+            const fornecedor = fornecedores.find((f) => f.id === p.fornecedorId);
+            return (
+              <TableRow key={p.id} hover>
+                <TableCell>{p.nome}</TableCell>
+                <TableCell>{fornecedor?.nome ?? '—'}</TableCell>
+                <TableCell>{formatBRL(p.preco)}</TableCell>
+                <TableCell>{formatPct(p.ipi)}</TableCell>
+                <TableCell>{formatPct(p.frete)}</TableCell>
+                <TableCell><Chip label={p.unidade} size="small" /></TableCell>
+                <TableCell align="right">
+                  <RowActions onEdit={() => onEdit(p)} onDelete={() => onDelete(p)} />
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+}
+
+// ─── Card mobile ──────────────────────────────────────────────────────────────
 
 function ProductCard({
   product,
@@ -117,9 +195,7 @@ function ProductCard({
           </Box>
           <Chip label={product.unidade} size="small" sx={{ ml: 1, flexShrink: 0 }} />
         </Stack>
-
         <Divider sx={{ my: 1.5 }} />
-
         <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap' }}>
           <Box>
             <Typography variant="caption" color="text.disabled">Preço</Typography>
@@ -135,33 +211,20 @@ function ProductCard({
           </Box>
           <Box sx={{ flex: 1 }}>
             <Typography variant="caption" color="text.disabled">Fornecedor</Typography>
-            <Typography
-              variant="body2"
-              sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-            >
+            <Typography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {fornecedor?.nome ?? '—'}
             </Typography>
           </Box>
         </Stack>
       </CardContent>
-
       <CardActions sx={{ justifyContent: 'flex-end', pt: 0 }}>
-        <Tooltip title="Editar">
-          <IconButton size="small" onClick={() => onEdit(product)}>
-            <EditIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Excluir">
-          <IconButton size="small" color="error" onClick={() => onDelete(product)}>
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        <RowActions onEdit={() => onEdit(product)} onDelete={() => onDelete(product)} />
       </CardActions>
     </Card>
   );
 }
 
-// ─── Modal de criação / edição ────────────────────────────────────────────────
+// ─── Modal criar/editar ───────────────────────────────────────────────────────
 
 function ProductModal({
   open,
@@ -216,11 +279,8 @@ function ProductModal({
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {initial ? 'Editar produto' : 'Novo produto'}
-        <IconButton size="small" onClick={onClose}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
+        <IconButton size="small" onClick={onClose}><CloseIcon fontSize="small" /></IconButton>
       </DialogTitle>
-
       <DialogContent dividers>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <TextField
@@ -231,8 +291,6 @@ function ProductModal({
             helperText={errors.nome}
             fullWidth
           />
-
-          {/* ✅ Select de fornecedor */}
           <TextField
             label="Fornecedor"
             select
@@ -246,14 +304,17 @@ function ProductModal({
             {loadingFornecedores ? (
               <MenuItem disabled>Carregando...</MenuItem>
             ) : fornecedores.length === 0 ? (
-              <MenuItem disabled>Nenhum fornecedor cadastrado. Cadastre na aba Fornecedores.</MenuItem>
+              <MenuItem disabled sx={{ p: 0 }}>
+                <Button component="a" href="/fornecedores" size="small" sx={{ px: 2, py: 1, width: '100%', justifyContent: 'flex-start' }}>
+                  Nenhum fornecedor cadastrado. Cadastre aqui
+                </Button>
+              </MenuItem>
             ) : (
               fornecedores.map((f) => (
                 <MenuItem key={f.id} value={f.id}>{f.nome}</MenuItem>
               ))
             )}
           </TextField>
-
           <Stack direction="row" spacing={2}>
             <TextField
               label="Preço"
@@ -272,12 +333,9 @@ function ProductModal({
               onChange={(e) => set('unidade', e.target.value)}
               sx={{ minWidth: 100 }}
             >
-              {UNIDADES.map((u) => (
-                <MenuItem key={u} value={u}>{u}</MenuItem>
-              ))}
+              {UNIDADES.map((u) => <MenuItem key={u} value={u}>{u}</MenuItem>)}
             </TextField>
           </Stack>
-
           <Stack direction="row" spacing={2}>
             <TextField
               label="IPI (opcional)"
@@ -298,7 +356,6 @@ function ProductModal({
           </Stack>
         </Stack>
       </DialogContent>
-
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose} disabled={saving}>Cancelar</Button>
         <Button
@@ -314,7 +371,7 @@ function ProductModal({
   );
 }
 
-// ─── Modal de confirmação de exclusão ────────────────────────────────────────
+// ─── Modal exclusão ───────────────────────────────────────────────────────────
 
 function DeleteDialog({
   product,
@@ -329,12 +386,8 @@ function DeleteDialog({
 
   const handle = async () => {
     setLoading(true);
-    try {
-      await onConfirm();
-      onClose();
-    } finally {
-      setLoading(false);
-    }
+    try { await onConfirm(); onClose(); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -364,6 +417,9 @@ function DeleteDialog({
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function ProductsCrud() {
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md')); // ✅ detecta desktop
+
   const [products, setProducts] = useState<Product[]>([]);
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -377,13 +433,10 @@ export default function ProductsCrud() {
     setToast({ msg, severity });
 
   useEffect(() => {
-    const loadAll = async () => {
-      await Promise.all([
-        api.list().then(setProducts).catch(() => notify('Erro ao carregar produtos', 'error')).finally(() => setLoading(false)),
-        api.fornecedores().then(setFornecedores).catch(() => notify('Erro ao carregar fornecedores', 'error')).finally(() => setLoadingFornecedores(false)),
-      ]);
-    };
-    loadAll();
+    Promise.all([
+      api.list().then(setProducts).catch(() => notify('Erro ao carregar produtos', 'error')).finally(() => setLoading(false)),
+      api.fornecedores().then(setFornecedores).catch(() => notify('Erro ao carregar fornecedores', 'error')).finally(() => setLoadingFornecedores(false)),
+    ]);
   }, []);
 
   const handleSave = async (form: ProductForm, id?: number) => {
@@ -415,8 +468,12 @@ export default function ProductsCrud() {
     }
   };
 
+  const openEdit = (p: Product) => { setEditing(p); setModalOpen(true); };
+  const openNew = () => { setEditing(undefined); setModalOpen(true); };
+
   return (
-    <Box sx={{ maxWidth: 640, mx: 'auto', px: 2, py: 3 }}>
+    <Box sx={{ px: { xs: 2, md: 4 }, py: 3 }}>
+      {/* Header */}
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
         <Box>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>Produtos</Typography>
@@ -424,48 +481,51 @@ export default function ProductsCrud() {
             {loading ? '...' : `${products.length} produto${products.length !== 1 ? 's' : ''}`}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => { setEditing(undefined); setModalOpen(true); }}
-          sx={{ display: { xs: 'none', sm: 'flex' } }}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={openNew}
+          sx={{ display: { xs: 'none', sm: 'flex' } }}>
           Novo
         </Button>
       </Stack>
 
-      <Stack spacing={2}>
-        {loading
-          ? Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} variant="rounded" height={140} sx={{ borderRadius: 3 }} />
-            ))
-          : products.length === 0
-          ? (
-              <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Typography color="text.secondary">Nenhum produto cadastrado.</Typography>
-                <Button
-                  variant="outlined"
-                  sx={{ mt: 2 }}
-                  onClick={() => { setEditing(undefined); setModalOpen(true); }}
-                >
-                  Cadastrar primeiro produto
-                </Button>
-              </Box>
-            )
-          : products.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                fornecedores={fornecedores}
-                onEdit={(p) => { setEditing(p); setModalOpen(true); }}
-                onDelete={setDeleting}
-              />
-            ))}
-      </Stack>
+      {/* Lista — tabela no desktop, cards no mobile */}
+      {loading ? (
+        <Stack spacing={2}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} variant="rounded" height={isDesktop ? 52 : 140} sx={{ borderRadius: 3 }} />
+          ))}
+        </Stack>
+      ) : products.length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography color="text.secondary">Nenhum produto cadastrado.</Typography>
+          <Button variant="outlined" sx={{ mt: 2 }} onClick={openNew}>
+            Cadastrar primeiro produto
+          </Button>
+        </Box>
+      ) : isDesktop ? (
+        <ProductTable
+          products={products}
+          fornecedores={fornecedores}
+          onEdit={openEdit}
+          onDelete={setDeleting}
+        />
+      ) : (
+        <Stack spacing={2}>
+          {products.map((p) => (
+            <ProductCard
+              key={p.id}
+              product={p}
+              fornecedores={fornecedores}
+              onEdit={openEdit}
+              onDelete={setDeleting}
+            />
+          ))}
+        </Stack>
+      )}
 
+      {/* FAB mobile */}
       <Fab
         color="primary"
-        onClick={() => { setEditing(undefined); setModalOpen(true); }}
+        onClick={openNew}
         sx={{ position: 'fixed', bottom: 24, right: 24, display: { xs: 'flex', sm: 'none' } }}
       >
         <AddIcon />

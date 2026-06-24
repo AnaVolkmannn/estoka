@@ -20,14 +20,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeRegistry>
           <Box sx={{ display: 'flex', minHeight: '100vh' }}>
             <Sidebar />
-            <Box
-              component="main"
-              sx={{
-                flexGrow: 1,
-                ml: { md: `${DRAWER_WIDTH}px` }, // empurra o conteúdo no desktop
-                p: 3,
-              }}
-            >
+              <Box
+                component="main"
+                sx={{
+                  flexGrow: 1,
+                  ml: { md: `${DRAWER_WIDTH}px` },
+                  p: 3,
+                }}
+              >
               {children}
             </Box>
           </Box>

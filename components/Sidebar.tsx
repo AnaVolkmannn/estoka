@@ -1,6 +1,8 @@
+// src/components/Sidebar.tsx
 'use client';
 
 import { useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   Box,
   Drawer,
@@ -15,30 +17,32 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import SettingsIcon from '@mui/icons-material/Settings';
-import MenuIcon from '@mui/icons-material/Menu';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
-import Add from '@mui/icons-material/Add'
-import Book from '@mui/icons-material/Book'
-import GroupAdd from '@mui/icons-material/GroupAdd'
 import { useColorMode } from '@/context/ThemeContext';
+import { Handyman, Inventory, History, People, Settings, Dashboard, Menu} from '@mui/icons-material';
 
 const DRAWER_WIDTH = 240;
 
 const navItems = [
-  { label: 'Dashboard', icon: <DashboardIcon /> },
-  { label: 'Lançar Inventário', icon: <Add/> },
-  { label: 'Produtos', icon: <Book /> },
-  { label: 'Fornecedores', icon: <GroupAdd /> },
-  { label: 'Configurações', icon: <SettingsIcon /> },
+  { label: 'Dashboard', icon: <Dashboard />, href: '/' },
+  { label: 'Produtos',  icon: <Handyman />,  href: '/produtos' },
+  { label: 'Fornecedores', icon: <People />, href: '/fornecedores' },
+  { label: 'Lançar inventário', icon: <Inventory />, href: '/inventario' },
+  { label: 'Histórico de lançamentos', icon: <History />, href: '/historico' },
+  { label: 'Configurações', icon: <Settings />, href: '/configuracoes' },
 ];
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
-  const [active, setActive] = useState('Dashboard');
+  const router = useRouter();
+  const pathname = usePathname();
   const { toggleColorMode, mode } = useColorMode();
   const theme = useTheme();
+
+  const handleNav = (href: string) => {
+    router.push(href);
+    onClose?.();
+  };
 
   return (
     <Box
@@ -50,31 +54,23 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         borderRight: `1px solid ${theme.palette.divider}`,
       }}
     >
-      {/* Logo */}
-      <Box sx={{ px: 3, py: 2.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
+      <Box sx={{ px: 3, py: 2.5 }}>
         <Typography
           variant="h6"
-          sx={{
-            fontWeight: 800,
-            letterSpacing: '-0.5px',
-            color: 'primary.main',
-          }}
+          sx={{ fontWeight: 800, letterSpacing: '-0.5px', color: 'main' }}
         >
-            Diorana
+          Diorana | Inventário
         </Typography>
       </Box>
 
       {/* Nav */}
       <List sx={{ flex: 1, px: 1, pt: 1 }}>
-        {navItems.map(({ label, icon }) => {
-          const isActive = active === label;
+        {navItems.map(({ label, icon, href }) => {
+          const isActive = pathname === href;
           return (
-            <ListItem key={label} disablePadding sx={{ mb: 0.5 }}>
+            <ListItem key={href} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
-                onClick={() => {
-                  setActive(label);
-                  onClose?.();
-                }}
+                onClick={() => handleNav(href)}
                 sx={{
                   borderRadius: 2,
                   bgcolor: isActive ? 'primary.main' : 'transparent',
@@ -94,15 +90,15 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                   {icon}
                 </ListItemIcon>
                 <ListItemText
-                primary={label}
-                slotProps={{
+                  primary={label}
+                  slotProps={{
                     primary: {
-                        sx: {
+                      sx: {
                         fontSize: 14,
                         fontWeight: isActive ? 600 : 400,
-                        },
+                      },
                     },
-                }}
+                  }}
                 />
               </ListItemButton>
             </ListItem>
@@ -110,11 +106,11 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         })}
       </List>
 
-      {/* Bottom: theme toggle */}
       <Box
         sx={{
           px: 2,
           py: 2,
+          borderTop: `1px solid ${theme.palette.divider}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -140,17 +136,15 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Botão hamburguer — só no mobile */}
       {isMobile && (
         <IconButton
           onClick={() => setMobileOpen(true)}
           sx={{ position: 'fixed', top: 12, left: 12, zIndex: 1300 }}
         >
-          <MenuIcon />
+          <Menu />
         </IconButton>
       )}
 
-      {/* Drawer mobile (temporário) */}
       <Drawer
         variant="temporary"
         open={mobileOpen}
@@ -164,7 +158,6 @@ export default function Sidebar() {
         <SidebarContent onClose={() => setMobileOpen(false)} />
       </Drawer>
 
-      {/* Drawer desktop (permanente) */}
       <Drawer
         variant="permanent"
         sx={{
