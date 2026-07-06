@@ -20,17 +20,16 @@ import {
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import { useColorMode } from '@/context/ThemeContext';
-import { Handyman, Inventory, History, People, Settings, Dashboard, Menu} from '@mui/icons-material';
+import { Handyman, Inventory, History, People, Dashboard, Menu} from '@mui/icons-material';
 
 const DRAWER_WIDTH = 240;
 
 const navItems = [
   { label: 'Dashboard', icon: <Dashboard />, href: '/' },
-  { label: 'Produtos',  icon: <Handyman />,  href: '/produtos' },
   { label: 'Fornecedores', icon: <People />, href: '/fornecedores' },
+  { label: 'Produtos',  icon: <Handyman />,  href: '/produtos' },
   { label: 'Lançar inventário', icon: <Inventory />, href: '/inventario' },
   { label: 'Histórico de lançamentos', icon: <History />, href: '/historico' },
-  { label: 'Configurações', icon: <Settings />, href: '/configuracoes' },
 ];
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {

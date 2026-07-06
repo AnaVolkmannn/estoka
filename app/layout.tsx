@@ -11,8 +11,6 @@ export const metadata: Metadata = {
   title: 'Diorana | Estoka',
 };
 
-const DRAWER_WIDTH = 240;
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
@@ -24,7 +22,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 component="main"
                 sx={{
                   flexGrow: 1,
-                  ml: { md: `${DRAWER_WIDTH}px` },
                   p: 3,
                 }}
               >

@@ -34,7 +34,6 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
 
 interface Fornecedor {
@@ -47,7 +46,7 @@ type FornecedorForm = Omit<Fornecedor, 'id'>;
 
 const EMPTY_FORM: FornecedorForm = { nome: '', cnpj: undefined };
 
-const BASE_URL = 'https://sua-api.com/fornecedores';
+const BASE_URL = 'http://localhost:8081/fornecedores';
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -55,6 +54,7 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
     ...options,
   });
   if (!res.ok) throw new Error(`Erro ${res.status}: ${res.statusText}`);
+  if (res.status === 204) return undefined as T;
   return res.json();
 }
 
@@ -62,7 +62,6 @@ const api = {
   list: () => apiFetch<Fornecedor[]>(BASE_URL),
   create: (data: FornecedorForm) => apiFetch<Fornecedor>(BASE_URL, { method: 'POST', body: JSON.stringify(data) }),
   update: (id: number, data: FornecedorForm) => apiFetch<Fornecedor>(`${BASE_URL}/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  remove: (id: number) => apiFetch<void>(`${BASE_URL}/${id}`, { method: 'DELETE' }),
 };
 
 const formatCnpj = (v?: string) => {
@@ -73,14 +72,11 @@ const formatCnpj = (v?: string) => {
 
 // ─── Ações ────────────────────────────────────────────────────────────────────
 
-function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+function RowActions({ onEdit }: { onEdit: () => void; }) {
   return (
     <>
       <Tooltip title="Editar">
         <IconButton size="small" onClick={onEdit}><EditIcon fontSize="small" /></IconButton>
-      </Tooltip>
-      <Tooltip title="Excluir">
-        <IconButton size="small" color="error" onClick={onDelete}><DeleteIcon fontSize="small" /></IconButton>
       </Tooltip>
     </>
   );
@@ -91,11 +87,9 @@ function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => 
 function FornecedorTable({
   fornecedores,
   onEdit,
-  onDelete,
 }: {
   fornecedores: Fornecedor[];
   onEdit: (f: Fornecedor) => void;
-  onDelete: (f: Fornecedor) => void;
 }) {
   return (
     <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
@@ -113,7 +107,7 @@ function FornecedorTable({
               <TableCell>{f.nome}</TableCell>
               <TableCell>{formatCnpj(f.cnpj)}</TableCell>
               <TableCell align="right">
-                <RowActions onEdit={() => onEdit(f)} onDelete={() => onDelete(f)} />
+                <RowActions onEdit={() => onEdit(f)} />
               </TableCell>
             </TableRow>
           ))}
@@ -128,11 +122,9 @@ function FornecedorTable({
 function FornecedorCard({
   fornecedor,
   onEdit,
-  onDelete,
 }: {
   fornecedor: Fornecedor;
   onEdit: (f: Fornecedor) => void;
-  onDelete: (f: Fornecedor) => void;
 }) {
   return (
     <Card variant="outlined" sx={{ borderRadius: 3 }}>
@@ -145,7 +137,7 @@ function FornecedorCard({
         </Box>
       </CardContent>
       <CardActions sx={{ justifyContent: 'flex-end', pt: 0 }}>
-        <RowActions onEdit={() => onEdit(fornecedor)} onDelete={() => onDelete(fornecedor)} />
+        <RowActions onEdit={() => onEdit(fornecedor)} />
       </CardActions>
     </Card>
   );
@@ -229,49 +221,6 @@ function FornecedorModal({
   );
 }
 
-// ─── Modal exclusão ───────────────────────────────────────────────────────────
-
-function DeleteDialog({
-  fornecedor,
-  onClose,
-  onConfirm,
-}: {
-  fornecedor: Fornecedor | null;
-  onClose: () => void;
-  onConfirm: () => Promise<void>;
-}) {
-  const [loading, setLoading] = useState(false);
-
-  const handle = async () => {
-    setLoading(true);
-    try { await onConfirm(); onClose(); }
-    finally { setLoading(false); }
-  };
-
-  return (
-    <Dialog open={!!fornecedor} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Excluir fornecedor</DialogTitle>
-      <DialogContent>
-        <Typography variant="body2">
-          Tem certeza que deseja excluir <strong>{fornecedor?.nome}</strong>? Essa ação não pode ser desfeita.
-        </Typography>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} disabled={loading}>Cancelar</Button>
-        <Button
-          variant="contained"
-          color="error"
-          onClick={handle}
-          disabled={loading}
-          startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
-        >
-          {loading ? 'Excluindo...' : 'Excluir'}
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function FornecedorCrud() {
@@ -282,7 +231,6 @@ export default function FornecedorCrud() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Fornecedor | undefined>();
-  const [deleting, setDeleting] = useState<Fornecedor | null>(null);
   const [toast, setToast] = useState<{ msg: string; severity: 'success' | 'error' } | null>(null);
 
   const notify = (msg: string, severity: 'success' | 'error' = 'success') =>
@@ -306,18 +254,6 @@ export default function FornecedorCrud() {
     } catch {
       notify('Erro ao salvar fornecedor', 'error');
       throw new Error('save failed');
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleting) return;
-    try {
-      await api.remove(deleting.id);
-      setFornecedores((prev) => prev.filter((f) => f.id !== deleting.id));
-      notify('Fornecedor excluído!');
-    } catch {
-      notify('Erro ao excluir fornecedor', 'error');
-      throw new Error('delete failed');
     }
   };
 
@@ -353,11 +289,11 @@ export default function FornecedorCrud() {
           </Button>
         </Box>
       ) : isDesktop ? (
-        <FornecedorTable fornecedores={fornecedores} onEdit={openEdit} onDelete={setDeleting} />
+        <FornecedorTable fornecedores={fornecedores} onEdit={openEdit}/>
       ) : (
         <Stack spacing={2}>
           {fornecedores.map((f) => (
-            <FornecedorCard key={f.id} fornecedor={f} onEdit={openEdit} onDelete={setDeleting} />
+            <FornecedorCard key={f.id} fornecedor={f} onEdit={openEdit}/>
           ))}
         </Stack>
       )}
@@ -371,7 +307,6 @@ export default function FornecedorCrud() {
       </Fab>
 
       <FornecedorModal open={modalOpen} initial={editing} onClose={() => setModalOpen(false)} onSave={handleSave} />
-      <DeleteDialog fornecedor={deleting} onClose={() => setDeleting(null)} onConfirm={handleDelete} />
 
       <Snackbar open={!!toast} autoHideDuration={3000} onClose={() => setToast(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert severity={toast?.severity} onClose={() => setToast(null)} sx={{ width: '100%' }}>

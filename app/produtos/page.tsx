@@ -1,3 +1,4 @@
+// src/app/produtos/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,6 +8,7 @@ import {
   Card,
   CardActions,
   CardContent,
+  Checkbox,
   Chip,
   CircularProgress,
   Dialog,
@@ -15,8 +17,9 @@ import {
   DialogTitle,
   Divider,
   Fab,
+  FormControlLabel,
+  FormGroup,
   IconButton,
-  InputAdornment,
   MenuItem,
   Paper,
   Skeleton,
@@ -30,50 +33,55 @@ import {
   TableHead,
   TableRow,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CloseIcon from '@mui/icons-material/Close';
+
+import { DoDisturb, Edit, Close, Restore, Add } from '@mui/icons-material';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
-const UNIDADES = ['UN', 'KG', 'G', 'L', 'ML', 'M', 'CM', 'CX', 'PC'];
+const UNIDADES = ['Unidade (UN)', 'Chapa (CH)', 'Kilo (KG)', 'Litro (L)', 'Balde (BL)', 'Metro (M)', 'Caixa (CX)', 'Peça (PC)'];
 
 interface Fornecedor {
   id: number;
   nome: string;
+  cnpj?: string;
 }
 
-interface Product {
+interface Produto {
   id: number;
   nome: string;
-  preco: number;
-  ipi?: number;
-  frete?: number;
-  unidade: string;
-  fornecedorId: number;
+  unidadeMedida: string;
+  fornecedor: Fornecedor;
+  temIpi: boolean;
+  temFrete: boolean;
 }
 
-type ProductForm = Omit<Product, 'id'>;
+interface ProdutoForm {
+  nome: string;
+  unidadeMedida: string;
+  fornecedorId: number;
+  temIpi: boolean;
+  temFrete: boolean;
+}
 
-const EMPTY_FORM: ProductForm = {
+const EMPTY_FORM: ProdutoForm = {
   nome: '',
-  preco: 0,
-  ipi: undefined,
-  frete: undefined,
-  unidade: 'UN',
+  unidadeMedida: 'UN',
   fornecedorId: 0,
+  temIpi: false,
+  temFrete: false,
 };
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 
-const BASE_URL_PRODUTOS = 'https://sua-api.com/produtos';
-const BASE_URL_FORNECEDORES = 'https://sua-api.com/fornecedores';
+const BASE_URL_PRODUTOS = 'http://localhost:8081/produtos';
+const BASE_URL_FORNECEDORES = 'http://localhost:8081/fornecedores';
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -81,56 +89,81 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
     ...options,
   });
   if (!res.ok) throw new Error(`Erro ${res.status}: ${res.statusText}`);
+  if (res.status === 204) return undefined as T;
   return res.json();
 }
 
 const api = {
-  list: () => apiFetch<Product[]>(BASE_URL_PRODUTOS),
-  create: (data: ProductForm) => apiFetch<Product>(BASE_URL_PRODUTOS, { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: number, data: ProductForm) => apiFetch<Product>(`${BASE_URL_PRODUTOS}/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  remove: (id: number) => apiFetch<void>(`${BASE_URL_PRODUTOS}/${id}`, { method: 'DELETE' }),
+  list: () => apiFetch<Produto[]>(BASE_URL_PRODUTOS),
+  listInativos: () => apiFetch<Produto[]>(`${BASE_URL_PRODUTOS}/inativos`),
+  create: (data: ProdutoForm) =>
+    apiFetch<Produto>(BASE_URL_PRODUTOS, { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: ProdutoForm) =>
+    apiFetch<Produto>(`${BASE_URL_PRODUTOS}/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  remove: (id: number) =>
+    apiFetch<void>(`${BASE_URL_PRODUTOS}/${id}`, { method: 'DELETE' }),
+  reativar: (id: number) =>
+    apiFetch<void>(`${BASE_URL_PRODUTOS}/${id}/reativar`, { method: 'PUT' }),
   fornecedores: () => apiFetch<Fornecedor[]>(BASE_URL_FORNECEDORES),
 };
 
-// ─── Formatadores ─────────────────────────────────────────────────────────────
+// ─── Badges IPI/Frete ─────────────────────────────────────────────────────────
 
-const formatBRL = (v: number) =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+function ProdutoBadges({ produto }: { produto: Produto }) {
+  if (!produto.temIpi && !produto.temFrete) return null;
+  return (
+    <Stack direction="row" spacing={0.5}>
+      {produto.temIpi && <Chip label="IPI" size="small" color="warning" variant="outlined" />}
+      {produto.temFrete && <Chip label="Frete" size="small" color="info" variant="outlined" />}
+    </Stack>
+  );
+}
 
-const formatPct = (v?: number) =>
-  v != null ? `${v.toFixed(2)}%` : '—';
-
-// ─── Ações compartilhadas ─────────────────────────────────────────────────────
+// ─── Ações ativos ─────────────────────────────────────────────────────────────
 
 function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   return (
     <>
       <Tooltip title="Editar">
         <IconButton size="small" onClick={onEdit}>
-          <EditIcon fontSize="small" />
+          <Edit fontSize="small" />
         </IconButton>
       </Tooltip>
-      <Tooltip title="Excluir">
+      <Tooltip title="Inativar">
         <IconButton size="small" color="error" onClick={onDelete}>
-          <DeleteIcon fontSize="small" />
+          <DoDisturb fontSize="small" />
         </IconButton>
       </Tooltip>
     </>
   );
 }
 
+// ─── Ações inativos ───────────────────────────────────────────────────────────
+
+function RowActionsInativo({ onReativar }: { onReativar: () => void }) {
+  return (
+    <Tooltip title="Reativar">
+      <IconButton size="small" color="success" onClick={onReativar}>
+        <Restore fontSize="small" />
+      </IconButton>
+    </Tooltip>
+  );
+}
+
 // ─── Tabela desktop ───────────────────────────────────────────────────────────
 
-function ProductTable({
-  products,
-  fornecedores,
+function ProdutoTable({
+  produtos,
+  inativo,
   onEdit,
   onDelete,
+  onReativar,
 }: {
-  products: Product[];
-  fornecedores: Fornecedor[];
-  onEdit: (p: Product) => void;
-  onDelete: (p: Product) => void;
+  produtos: Produto[];
+  inativo: boolean;
+  onEdit: (p: Produto) => void;
+  onDelete: (p: Produto) => void;
+  onReativar: (p: Produto) => void;
 }) {
   return (
     <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
@@ -139,30 +172,26 @@ function ProductTable({
           <TableRow>
             <TableCell sx={{ fontWeight: 700 }}>Nome</TableCell>
             <TableCell sx={{ fontWeight: 700 }}>Fornecedor</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Preço</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>IPI</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Frete</TableCell>
             <TableCell sx={{ fontWeight: 700 }}>Unidade</TableCell>
+            <TableCell sx={{ fontWeight: 700 }}>Encargos</TableCell>
             <TableCell align="right" sx={{ fontWeight: 700 }}>Ações</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {products.map((p) => {
-            const fornecedor = fornecedores.find((f) => f.id === p.fornecedorId);
-            return (
-              <TableRow key={p.id} hover>
-                <TableCell>{p.nome}</TableCell>
-                <TableCell>{fornecedor?.nome ?? '—'}</TableCell>
-                <TableCell>{formatBRL(p.preco)}</TableCell>
-                <TableCell>{formatPct(p.ipi)}</TableCell>
-                <TableCell>{formatPct(p.frete)}</TableCell>
-                <TableCell><Chip label={p.unidade} size="small" /></TableCell>
-                <TableCell align="right">
-                  <RowActions onEdit={() => onEdit(p)} onDelete={() => onDelete(p)} />
-                </TableCell>
-              </TableRow>
-            );
-          })}
+          {produtos.map((p) => (
+            <TableRow key={p.id} hover>
+              <TableCell sx={{ color: inativo ? 'text.disabled' : 'inherit' }}>{p.nome}</TableCell>
+              <TableCell sx={{ color: inativo ? 'text.disabled' : 'inherit' }}>{p.fornecedor?.nome ?? '—'}</TableCell>
+              <TableCell><Chip label={p.unidadeMedida} size="small" /></TableCell>
+              <TableCell><ProdutoBadges produto={p} /></TableCell>
+              <TableCell align="right">
+                {inativo
+                  ? <RowActionsInativo onReativar={() => onReativar(p)} />
+                  : <RowActions onEdit={() => onEdit(p)} onDelete={() => onDelete(p)} />
+                }
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </TableContainer>
@@ -171,54 +200,40 @@ function ProductTable({
 
 // ─── Card mobile ──────────────────────────────────────────────────────────────
 
-function ProductCard({
-  product,
-  fornecedores,
+function ProdutoCard({
+  produto,
+  inativo,
   onEdit,
   onDelete,
+  onReativar,
 }: {
-  product: Product;
-  fornecedores: Fornecedor[];
-  onEdit: (p: Product) => void;
-  onDelete: (p: Product) => void;
+  produto: Produto;
+  inativo: boolean;
+  onEdit: (p: Produto) => void;
+  onDelete: (p: Produto) => void;
+  onReativar: (p: Produto) => void;
 }) {
-  const fornecedor = fornecedores.find((f) => f.id === product.fornecedorId);
-
   return (
-    <Card variant="outlined" sx={{ borderRadius: 3 }}>
+    <Card variant="outlined" sx={{ borderRadius: 3, opacity: inativo ? 0.6 : 1 }}>
       <CardContent sx={{ pb: 1 }}>
         <Stack direction="row" sx={{ alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
-              {product.nome}
-            </Typography>
-          </Box>
-          <Chip label={product.unidade} size="small" sx={{ ml: 1, flexShrink: 0 }} />
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{produto.nome}</Typography>
+          <Chip label={produto.unidadeMedida} size="small" sx={{ ml: 1 }} />
         </Stack>
         <Divider sx={{ my: 1.5 }} />
-        <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap' }}>
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <Box>
-            <Typography variant="caption" color="text.disabled">Preço</Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatBRL(product.preco)}</Typography>
-          </Box>
-          <Box>
-            <Typography variant="caption" color="text.disabled">IPI</Typography>
-            <Typography variant="body2">{formatPct(product.ipi)}</Typography>
-          </Box>
-          <Box>
-            <Typography variant="caption" color="text.disabled">Frete</Typography>
-            <Typography variant="body2">{formatPct(product.frete)}</Typography>
-          </Box>
-          <Box sx={{ flex: 1 }}>
             <Typography variant="caption" color="text.disabled">Fornecedor</Typography>
-            <Typography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {fornecedor?.nome ?? '—'}
-            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>{produto.fornecedor?.nome ?? '—'}</Typography>
           </Box>
+          <ProdutoBadges produto={produto} />
         </Stack>
       </CardContent>
       <CardActions sx={{ justifyContent: 'flex-end', pt: 0 }}>
-        <RowActions onEdit={() => onEdit(product)} onDelete={() => onDelete(product)} />
+        {inativo
+          ? <RowActionsInativo onReativar={() => onReativar(produto)} />
+          : <RowActions onEdit={() => onEdit(produto)} onDelete={() => onDelete(produto)} />
+        }
       </CardActions>
     </Card>
   );
@@ -226,7 +241,7 @@ function ProductCard({
 
 // ─── Modal criar/editar ───────────────────────────────────────────────────────
 
-function ProductModal({
+function ProdutoModal({
   open,
   initial,
   fornecedores,
@@ -235,31 +250,40 @@ function ProductModal({
   onSave,
 }: {
   open: boolean;
-  initial?: Product;
+  initial?: Produto;
   fornecedores: Fornecedor[];
   loadingFornecedores: boolean;
   onClose: () => void;
-  onSave: (form: ProductForm, id?: number) => Promise<void>;
+  onSave: (form: ProdutoForm, id?: number) => Promise<void>;
 }) {
-  const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
+  const [form, setForm] = useState<ProdutoForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<keyof ProductForm, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof ProdutoForm, string>>>({});
 
   useEffect(() => {
     if (open) {
-      setForm(initial ? { ...initial } : EMPTY_FORM);
+      setForm(
+        initial
+          ? {
+              nome: initial.nome,
+              unidadeMedida: initial.unidadeMedida,
+              fornecedorId: initial.fornecedor.id,
+              temIpi: initial.temIpi,
+              temFrete: initial.temFrete,
+            }
+          : EMPTY_FORM
+      );
       setErrors({});
     }
   }, [open, initial]);
 
-  const set = (field: keyof ProductForm, value: string | number | undefined) =>
+  const set = (field: keyof ProdutoForm, value: string | number | boolean) =>
     setForm((f) => ({ ...f, [field]: value }));
 
   const validate = () => {
     const e: typeof errors = {};
     if (!form.nome.trim()) e.nome = 'Nome obrigatório';
     if (!form.fornecedorId) e.fornecedorId = 'Fornecedor obrigatório';
-    if (form.preco <= 0) e.preco = 'Preço deve ser maior que zero';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -279,7 +303,7 @@ function ProductModal({
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {initial ? 'Editar produto' : 'Novo produto'}
-        <IconButton size="small" onClick={onClose}><CloseIcon fontSize="small" /></IconButton>
+        <IconButton size="small" onClick={onClose}><Close fontSize="small" /></IconButton>
       </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2} sx={{ pt: 1 }}>
@@ -304,9 +328,9 @@ function ProductModal({
             {loadingFornecedores ? (
               <MenuItem disabled>Carregando...</MenuItem>
             ) : fornecedores.length === 0 ? (
-              <MenuItem disabled sx={{ p: 0 }}>
-                <Button component="a" href="/fornecedores" size="small" sx={{ px: 2, py: 1, width: '100%', justifyContent: 'flex-start' }}>
-                  Nenhum fornecedor cadastrado. Cadastre aqui
+              <MenuItem disabled>
+                <Button component="a" href="/fornecedores" size="small">
+                  Nenhum fornecedor. Cadastre aqui
                 </Button>
               </MenuItem>
             ) : (
@@ -315,45 +339,36 @@ function ProductModal({
               ))
             )}
           </TextField>
-          <Stack direction="row" spacing={2}>
-            <TextField
-              label="Preço"
-              type="number"
-              value={form.preco}
-              onChange={(e) => set('preco', parseFloat(e.target.value))}
-              error={!!errors.preco}
-              helperText={errors.preco}
-              slotProps={{ input: { startAdornment: <InputAdornment position="start">R$</InputAdornment> } }}
-              fullWidth
+          <TextField
+            label="Unidade"
+            select
+            value={form.unidadeMedida}
+            onChange={(e) => set('unidadeMedida', e.target.value)}
+            fullWidth
+          >
+            {UNIDADES.map((u) => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+          </TextField>
+
+          <FormGroup row>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={form.temIpi}
+                  onChange={(e) => set('temIpi', e.target.checked)}
+                />
+              }
+              label="Tem IPI"
             />
-            <TextField
-              label="Unidade"
-              select
-              value={form.unidade}
-              onChange={(e) => set('unidade', e.target.value)}
-              sx={{ minWidth: 100 }}
-            >
-              {UNIDADES.map((u) => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-            </TextField>
-          </Stack>
-          <Stack direction="row" spacing={2}>
-            <TextField
-              label="IPI (opcional)"
-              type="number"
-              value={form.ipi ?? ''}
-              onChange={(e) => set('ipi', e.target.value ? parseFloat(e.target.value) : undefined)}
-              slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }}
-              fullWidth
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={form.temFrete}
+                  onChange={(e) => set('temFrete', e.target.checked)}
+                />
+              }
+              label="Tem Frete"
             />
-            <TextField
-              label="Frete (opcional)"
-              type="number"
-              value={form.frete ?? ''}
-              onChange={(e) => set('frete', e.target.value ? parseFloat(e.target.value) : undefined)}
-              slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }}
-              fullWidth
-            />
-          </Stack>
+          </FormGroup>
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
@@ -371,14 +386,14 @@ function ProductModal({
   );
 }
 
-// ─── Modal exclusão ───────────────────────────────────────────────────────────
+// ─── Modal inativar ───────────────────────────────────────────────────────────
 
 function DeleteDialog({
-  product,
+  produto,
   onClose,
   onConfirm,
 }: {
-  product: Product | null;
+  produto: Produto | null;
   onClose: () => void;
   onConfirm: () => Promise<void>;
 }) {
@@ -391,11 +406,11 @@ function DeleteDialog({
   };
 
   return (
-    <Dialog open={!!product} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Excluir produto</DialogTitle>
+    <Dialog open={!!produto} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle>Inativar produto</DialogTitle>
       <DialogContent>
         <Typography variant="body2">
-          Tem certeza que deseja excluir <strong>{product?.nome}</strong>? Essa ação não pode ser desfeita.
+          Tem certeza que deseja inativar <strong>{produto?.nome}</strong>? O histórico será preservado.
         </Typography>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -407,7 +422,7 @@ function DeleteDialog({
           disabled={loading}
           startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
         >
-          {loading ? 'Excluindo...' : 'Excluir'}
+          {loading ? 'Inativando...' : 'Inativar'}
         </Button>
       </DialogActions>
     </Dialog>
@@ -416,38 +431,55 @@ function DeleteDialog({
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 
-export default function ProductsCrud() {
+export default function ProdutosCrud() {
   const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md')); // ✅ detecta desktop
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [filtro, setFiltro] = useState<'ativos' | 'inativos'>('ativos');
+  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [inativos, setInativos] = useState<Produto[]>([]);
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingFornecedores, setLoadingFornecedores] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<Product | undefined>();
-  const [deleting, setDeleting] = useState<Product | null>(null);
+  const [editing, setEditing] = useState<Produto | undefined>();
+  const [deleting, setDeleting] = useState<Produto | null>(null);
   const [toast, setToast] = useState<{ msg: string; severity: 'success' | 'error' } | null>(null);
 
   const notify = (msg: string, severity: 'success' | 'error' = 'success') =>
     setToast({ msg, severity });
 
-  useEffect(() => {
+  const carregarProdutos = () => {
+    setLoading(true);
     Promise.all([
-      api.list().then(setProducts).catch(() => notify('Erro ao carregar produtos', 'error')).finally(() => setLoading(false)),
-      api.fornecedores().then(setFornecedores).catch(() => notify('Erro ao carregar fornecedores', 'error')).finally(() => setLoadingFornecedores(false)),
-    ]);
+      api.list(),
+      api.listInativos(),
+    ])
+      .then(([ativos, inativosData]) => {
+        setProdutos(ativos);
+        setInativos(inativosData);
+      })
+      .catch(() => notify('Erro ao carregar produtos', 'error'))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    carregarProdutos();
+    api.fornecedores()
+      .then(setFornecedores)
+      .catch(() => notify('Erro ao carregar fornecedores', 'error'))
+      .finally(() => setLoadingFornecedores(false));
   }, []);
 
-  const handleSave = async (form: ProductForm, id?: number) => {
+  const handleSave = async (form: ProdutoForm, id?: number) => {
     try {
       if (id) {
         const updated = await api.update(id, form);
-        setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)));
+        setProdutos((prev) => prev.map((p) => (p.id === id ? updated : p)));
         notify('Produto atualizado!');
       } else {
         const created = await api.create(form);
-        setProducts((prev) => [created, ...prev]);
+        setProdutos((prev) => [created, ...prev]);
         notify('Produto criado!');
       }
     } catch {
@@ -460,78 +492,111 @@ export default function ProductsCrud() {
     if (!deleting) return;
     try {
       await api.remove(deleting.id);
-      setProducts((prev) => prev.filter((p) => p.id !== deleting.id));
-      notify('Produto excluído!');
+      setProdutos((prev) => prev.filter((p) => p.id !== deleting.id));
+      setInativos((prev) => [deleting, ...prev]);
+      notify('Produto inativado!');
     } catch {
-      notify('Erro ao excluir produto', 'error');
+      notify('Erro ao inativar produto', 'error');
       throw new Error('delete failed');
     }
   };
 
-  const openEdit = (p: Product) => { setEditing(p); setModalOpen(true); };
+  const handleReativar = async (produto: Produto) => {
+    try {
+      await api.reativar(produto.id);
+      setInativos((prev) => prev.filter((p) => p.id !== produto.id));
+      setProdutos((prev) => [produto, ...prev]);
+      notify('Produto reativado!');
+    } catch {
+      notify('Erro ao reativar produto', 'error');
+    }
+  };
+
+  const openEdit = (p: Produto) => { setEditing(p); setModalOpen(true); };
   const openNew = () => { setEditing(undefined); setModalOpen(true); };
+
+  const lista = filtro === 'ativos' ? produtos : inativos;
+  const isInativo = filtro === 'inativos';
 
   return (
     <Box sx={{ px: { xs: 2, md: 4 }, py: 3 }}>
-      {/* Header */}
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
         <Box>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>Produtos</Typography>
           <Typography variant="caption" color="text.secondary">
-            {loading ? '...' : `${products.length} produto${products.length !== 1 ? 's' : ''}`}
+            {loading ? '...' : `${lista.length} produto${lista.length !== 1 ? 's' : ''}`}
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={openNew}
-          sx={{ display: { xs: 'none', sm: 'flex' } }}>
-          Novo
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <ToggleButtonGroup
+            value={filtro}
+            exclusive
+            onChange={(_, val) => val && setFiltro(val)}
+            size="small"
+          >
+            <ToggleButton value="ativos">Ativos</ToggleButton>
+            <ToggleButton value="inativos">Inativos</ToggleButton>
+          </ToggleButtonGroup>
+          {!isInativo && (
+            <Button variant="contained" startIcon={<Add />} onClick={openNew}
+              sx={{ display: { xs: 'none', sm: 'flex' } }}>
+              Novo
+            </Button>
+          )}
+        </Stack>
       </Stack>
 
-      {/* Lista — tabela no desktop, cards no mobile */}
       {loading ? (
         <Stack spacing={2}>
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} variant="rounded" height={isDesktop ? 52 : 140} sx={{ borderRadius: 3 }} />
+            <Skeleton key={i} variant="rounded" height={isDesktop ? 52 : 120} sx={{ borderRadius: 3 }} />
           ))}
         </Stack>
-      ) : products.length === 0 ? (
+      ) : lista.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography color="text.secondary">Nenhum produto cadastrado.</Typography>
-          <Button variant="outlined" sx={{ mt: 2 }} onClick={openNew}>
-            Cadastrar primeiro produto
-          </Button>
+          <Typography color="text.secondary">
+            {isInativo ? 'Nenhum produto inativo.' : 'Nenhum produto cadastrado.'}
+          </Typography>
+          {!isInativo && (
+            <Button variant="outlined" sx={{ mt: 2 }} onClick={openNew}>
+              Cadastrar primeiro produto
+            </Button>
+          )}
         </Box>
       ) : isDesktop ? (
-        <ProductTable
-          products={products}
-          fornecedores={fornecedores}
+        <ProdutoTable
+          produtos={lista}
+          inativo={isInativo}
           onEdit={openEdit}
           onDelete={setDeleting}
+          onReativar={handleReativar}
         />
       ) : (
         <Stack spacing={2}>
-          {products.map((p) => (
-            <ProductCard
+          {lista.map((p) => (
+            <ProdutoCard
               key={p.id}
-              product={p}
-              fornecedores={fornecedores}
+              produto={p}
+              inativo={isInativo}
               onEdit={openEdit}
               onDelete={setDeleting}
+              onReativar={handleReativar}
             />
           ))}
         </Stack>
       )}
 
-      {/* FAB mobile */}
-      <Fab
-        color="primary"
-        onClick={openNew}
-        sx={{ position: 'fixed', bottom: 24, right: 24, display: { xs: 'flex', sm: 'none' } }}
-      >
-        <AddIcon />
-      </Fab>
+      {!isInativo && (
+        <Fab
+          color="primary"
+          onClick={openNew}
+          sx={{ position: 'fixed', bottom: 24, right: 24, display: { xs: 'flex', sm: 'none' } }}
+        >
+          <Add />
+        </Fab>
+      )}
 
-      <ProductModal
+      <ProdutoModal
         open={modalOpen}
         initial={editing}
         fornecedores={fornecedores}
@@ -541,7 +606,7 @@ export default function ProductsCrud() {
       />
 
       <DeleteDialog
-        product={deleting}
+        produto={deleting}
         onClose={() => setDeleting(null)}
         onConfirm={handleDelete}
       />
