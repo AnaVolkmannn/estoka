@@ -46,7 +46,8 @@ type FornecedorForm = Omit<Fornecedor, 'id'>;
 
 const EMPTY_FORM: FornecedorForm = { nome: '', cnpj: undefined };
 
-const BASE_URL = 'http://localhost:8081/fornecedores';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+const BASE_URL = `${API_URL}/fornecedores`;
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

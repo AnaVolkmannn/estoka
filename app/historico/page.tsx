@@ -71,8 +71,9 @@ const MESES = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
-const BASE_URL_PRODUTOS = 'http://localhost:8081/produtos';
-const BASE_URL_INVENTARIOS = 'http://localhost:8081/inventarios';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+const BASE_URL_PRODUTOS = `${API_URL}/produtos`;
+const BASE_URL_INVENTARIOS = `${API_URL}/inventarios`;
 
 // ─── API Fetcher ──────────────────────────────────────────────────────────────
 

@@ -79,9 +79,9 @@ const EMPTY_FORM: ProdutoForm = {
 };
 
 // ─── API ──────────────────────────────────────────────────────────────────────
-
-const BASE_URL_PRODUTOS = 'http://localhost:8081/produtos';
-const BASE_URL_FORNECEDORES = 'http://localhost:8081/fornecedores';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+const BASE_URL_FORNECEDORES = `${API_URL}/fornecedores`;
+const BASE_URL_PRODUTOS = `${API_URL}/produtos`;
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
