@@ -547,7 +547,11 @@ export default function LancarInventario() {
                               const formatado = formatCurrencyInput(e.target.value);
                               setValores((prev) => ({ ...prev, [p.id]: formatado }));
                             }}
-                            InputProps={{ startAdornment: <InputAdornment position="start">R$</InputAdornment> }}
+                            slotProps={{
+                              input: {
+                                startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                              } as any,
+                            }}
                           />
                         </TableCell>
 
@@ -563,7 +567,11 @@ export default function LancarInventario() {
                                 const formatado = formatPercentInput(e.target.value);
                                 setIpis((prev) => ({ ...prev, [p.id]: formatado }));
                               }}
-                              InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+                              slotProps={{
+                                input: {
+                                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                                } as any,
+                              }}
                             />
                           ) : (
                             <Typography variant="caption" color="text.disabled">—</Typography>
@@ -582,7 +590,11 @@ export default function LancarInventario() {
                                 const formatado = formatPercentInput(e.target.value);
                                 setFretes((prev) => ({ ...prev, [p.id]: formatado }));
                               }}
-                              InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+                              slotProps={{
+                                input: {
+                                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                                } as any,
+                              }}
                             />
                           ) : (
                             <Typography variant="caption" color="text.disabled">—</Typography>
@@ -669,7 +681,11 @@ export default function LancarInventario() {
                           const formatado = formatCurrencyInput(e.target.value);
                           setValores((prev) => ({ ...prev, [p.id]: formatado }));
                         }}
-                        InputProps={{ startAdornment: <InputAdornment position="start">R$</InputAdornment> }}
+                        slotProps={{
+                            input: {
+                                startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                            } as any,
+                        }}
                       />
 
                       {p.temIpi && (
@@ -684,7 +700,11 @@ export default function LancarInventario() {
                             const formatado = formatPercentInput(e.target.value);
                             setIpis((prev) => ({ ...prev, [p.id]: formatado }));
                           }}
-                          InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+                          slotProps={{
+                            input: {
+                                endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                            } as any,
+                        }}
                         />
                       )}
 
@@ -700,7 +720,11 @@ export default function LancarInventario() {
                             const formatado = formatCurrencyInput(e.target.value);
                             setFretes((prev) => ({ ...prev, [p.id]: formatado }));
                           }}
-                          InputProps={{ startAdornment: <InputAdornment position="start">R$</InputAdornment> }}
+                          slotProps={{
+                            input: {
+                                startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                            } as any,
+                        }}
                         />
                       )}
 
