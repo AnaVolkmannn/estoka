@@ -245,7 +245,7 @@ export default function HistoricoInventario() {
                           sx={{ fontWeight: 500 }}
                         />
                       ) : (
-                        <Chip size="small" label="Sem dados" variant="text" disabled />
+                        <Chip size="small" label="Sem dados" variant="outlined" disabled />
                       )}
                     </Stack>
 
@@ -308,7 +308,7 @@ export default function HistoricoInventario() {
                           variant="outlined"
                         />
                       ) : (
-                        <Chip size="small" label="Sem dados" variant="text" disabled />
+                        <Chip size="small" label="Sem dados" variant="outlined" disabled />
                       )}
                     </Stack>
                   </AccordionSummary>
