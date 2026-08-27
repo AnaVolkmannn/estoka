@@ -86,6 +86,23 @@ async function apiFetch<T>(url: string): Promise<T> {
   return res.json();
 }
 
+// ─── Cálculo centralizado do total do item ────────────────────────────────────
+// Regra de negócio: o frete é por unidade e deve ser multiplicado pela
+// quantidade do produto no inventário (quando o produto possui frete).
+function calcularTotalItem(p: Produto, item?: ItemInventario) {
+  const qtd = item?.quantidade ?? 0;
+  const val = item?.valor ?? 0;
+  const ipiPercent = p.temIpi ? (item?.ipi ?? 0) : 0;
+  const freteUnitario = p.temFrete ? (item?.frete ?? 0) : 0;
+
+  const subtotal = qtd * val;
+  const valorIpi = subtotal * (ipiPercent / 100);
+  const freteTotal = freteUnitario * qtd;
+  const total = subtotal + valorIpi + freteTotal;
+
+  return { qtd, val, ipiPercent, freteUnitario, freteTotal, total };
+}
+
 export default function HistoricoInventario() {
   const hoje = useMemo(() => new Date(), []);
   const [ano, setAno] = useState(hoje.getFullYear());
@@ -141,23 +158,31 @@ export default function HistoricoInventario() {
     if (!inventario || inventario.itens.length === 0) return;
 
     const mapaItens = new Map(inventario.itens.map(i => [i.produtoId, i]));
-    
-    let csvContent = '\uFEFF'; 
+
+    let csvContent = '\uFEFF';
+
+    // Linha de cabeçalho com o mês/ano de referência do inventário
+    csvContent += `Inventário de ${MESES[mesIndex - 1]} de ${ano}\n`;
+    csvContent += `Situação;${inventario.fechado ? 'Fechado' : 'Em aberto'}\n\n`;
+
     csvContent += 'Produto;Fornecedor;Unidade;Quantidade;Valor Unitario;IPI (%);Frete (R$);Total\n';
+
+    let somaGeral = 0;
 
     produtos.forEach((p) => {
       const item = mapaItens.get(p.id);
-      const qtd = item?.quantidade ?? 0;
-      const val = item?.valor ?? 0;
-      const ipi = p.temIpi ? (item?.ipi ?? 0) : 0;
-      const frete = p.temFrete ? (item?.frete ?? 0) : 0;
-      const total = (qtd * val) + frete + ((qtd * val) * (ipi / 100));
+      const { qtd, val, ipiPercent, freteTotal, total } = calcularTotalItem(p, item);
+
+      somaGeral += total;
 
       csvContent += `"${p.nome.replace(/"/g, '""')}";` +
                     `"${(p.fornecedor?.nome ?? '—').replace(/"/g, '""')}";` +
                     `"${p.unidadeMedida}";` +
-                    `${qtd};${val};${ipi};${frete};${total.toFixed(2)}\n`;
+                    `${qtd};${val};${ipiPercent};${freteTotal.toFixed(2)};${total.toFixed(2)}\n`;
     });
+
+    // Linha de total geral (soma de todos os produtos do estoque)
+    csvContent += ['', '', '', '', '', '', 'TOTAL GERAL', somaGeral.toFixed(2)].join(';') + '\n';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -277,6 +302,10 @@ export default function HistoricoInventario() {
               
               const mapaItens = new Map((dataInventario?.itens ?? []).map(i => [i.produtoId, i]));
 
+              // Soma geral do mês, usada na tabela (linha de rodapé) e mantida
+              // consistente com o cálculo usado no CSV.
+              let somaGeralMes = 0;
+
               return (
                 <Accordion
                   key={mesIndex}
@@ -364,14 +393,8 @@ export default function HistoricoInventario() {
                             <TableBody>
                               {produtos.map((p) => {
                                 const item = mapaItens.get(p.id);
-                                const qtd = item?.quantidade ?? 0;
-                                const val = item?.valor ?? 0;
-                                const ipi = p.temIpi ? (item?.ipi ?? 0) : 0;
-                                const frete = p.temFrete ? (item?.frete ?? 0) : 0;
-                                
-                                const subtotalProduto = qtd * val;
-                                const valorIpi = subtotalProduto * (ipi / 100);
-                                const totalDoItem = subtotalProduto + valorIpi + frete;
+                                const { qtd, val, ipiPercent, freteTotal, total } = calcularTotalItem(p, item);
+                                somaGeralMes += total;
 
                                 return (
                                   <TableRow key={p.id} hover>
@@ -380,14 +403,22 @@ export default function HistoricoInventario() {
                                     <TableCell><Chip label={p.unidadeMedida} size="small" sx={{ fontSize: 11, height: 20 }} /></TableCell>
                                     <TableCell align="right">{qtd || '—'}</TableCell>
                                     <TableCell align="right">{val ? `R$ ${val.toFixed(2)}` : '—'}</TableCell>
-                                    <TableCell align="right">{p.temIpi ? `${ipi}%` : <Typography variant="caption" color="text.disabled">—</Typography>}</TableCell>
-                                    <TableCell align="right">{p.temFrete && frete ? `R$ ${frete.toFixed(2)}` : p.temFrete ? 'R$ 0,00' : <Typography variant="caption" color="text.disabled">—</Typography>}</TableCell>
+                                    <TableCell align="right">{p.temIpi ? `${ipiPercent}%` : <Typography variant="caption" color="text.disabled">—</Typography>}</TableCell>
+                                    <TableCell align="right">{p.temFrete && freteTotal ? `R$ ${freteTotal.toFixed(2)}` : p.temFrete ? 'R$ 0,00' : <Typography variant="caption" color="text.disabled">—</Typography>}</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 600 }}>
-                                      {totalDoItem > 0 ? `R$ ${totalDoItem.toFixed(2)}` : '—'}
+                                      {total > 0 ? `R$ ${total.toFixed(2)}` : '—'}
                                     </TableCell>
                                   </TableRow>
                                 );
                               })}
+                              <TableRow>
+                                <TableCell colSpan={7} align="right" sx={{ fontWeight: 700 }}>
+                                  TOTAL GERAL
+                                </TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 700 }}>
+                                  {`R$ ${somaGeralMes.toFixed(2)}`}
+                                </TableCell>
+                              </TableRow>
                             </TableBody>
                           </Table>
                         </TableContainer>
