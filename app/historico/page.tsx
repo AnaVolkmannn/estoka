@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import * as XLSX from 'xlsx';
 import {
   Accordion,
   AccordionDetails,
@@ -86,6 +87,40 @@ async function apiFetch<T>(url: string): Promise<T> {
   return res.json();
 }
 
+// ─── Formatação de valores monetários ──────────────────────────────────────────
+
+// Para exibição na tela: "R$ 1.234,56" (padrão brasileiro completo)
+function formatBRL(valor: number) {
+  return valor.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+// Formato usado nas células monetárias do Excel.
+// O valor continua sendo NUMBER; o formato abaixo controla apenas a exibição.
+const FORMATO_REAL = 'R$ #,##0.00';
+
+function aplicarFormatacaoPlanilha(ws: XLSX.WorkSheet, primeiraLinhaDados: number, ultimaLinhaDados: number) {
+  for (let linha = primeiraLinhaDados; linha <= ultimaLinhaDados; linha++) {
+    // Quantidade: número inteiro/decimal, não texto.
+    const celulaQuantidade = ws[`D${linha}`];
+    if (celulaQuantidade) celulaQuantidade.z = '0.00';
+
+    // Valor unitário, frete e total: número com formatação de Real.
+    for (const coluna of ['E', 'G', 'H']) {
+      const celula = ws[`${coluna}${linha}`];
+      if (celula) celula.z = FORMATO_REAL;
+    }
+
+    // IPI: permanece número e é exibido como percentual.
+    const celulaIpi = ws[`F${linha}`];
+    if (celulaIpi) celulaIpi.z = '0.00"%"';
+  }
+}
+
 // ─── Cálculo centralizado do total do item ────────────────────────────────────
 // Regra de negócio: o frete é por unidade e deve ser multiplicado pela
 // quantidade do produto no inventário (quando o produto possui frete).
@@ -153,19 +188,18 @@ export default function HistoricoInventario() {
     setExpanded(isExpanded ? mesIndex : false);
   };
 
-  const gerarCSV = (mesIndex: number) => {
+  const gerarXLSX = (mesIndex: number) => {
     const inventario = inventarios[mesIndex];
     if (!inventario || inventario.itens.length === 0) return;
 
     const mapaItens = new Map(inventario.itens.map(i => [i.produtoId, i]));
 
-    let csvContent = '\uFEFF';
-
-    // Linha de cabeçalho com o mês/ano de referência do inventário
-    csvContent += `Inventário de ${MESES[mesIndex - 1]} de ${ano}\n`;
-    csvContent += `Situação;${inventario.fechado ? 'Fechado' : 'Em aberto'}\n\n`;
-
-    csvContent += 'Produto;Fornecedor;Unidade;Quantidade;Valor Unitario;IPI (%);Frete (R$);Total\n';
+    const linhas: (string | number)[][] = [
+      [`Inventário de ${MESES[mesIndex - 1]} de ${ano}`],
+      ['Situação', inventario.fechado ? 'Fechado' : 'Em aberto'],
+      [],
+      ['Produto', 'Fornecedor', 'Unidade', 'Quantidade', 'Valor Unitario', 'IPI (%)', 'Frete (R$)', 'Total'],
+    ];
 
     let somaGeral = 0;
 
@@ -175,24 +209,60 @@ export default function HistoricoInventario() {
 
       somaGeral += total;
 
-      csvContent += `"${p.nome.replace(/"/g, '""')}";` +
-                    `"${(p.fornecedor?.nome ?? '—').replace(/"/g, '""')}";` +
-                    `"${p.unidadeMedida}";` +
-                    `${qtd};${val};${ipiPercent};${freteTotal.toFixed(2)};${total.toFixed(2)}\n`;
+      // Os valores são enviados ao XLSX como number, e não como strings.
+      linhas.push([
+        p.nome,
+        p.fornecedor?.nome ?? '—',
+        p.unidadeMedida,
+        qtd,
+        val,
+        ipiPercent,
+        freteTotal,
+        total,
+      ]);
     });
 
-    // Linha de total geral (soma de todos os produtos do estoque)
-    csvContent += ['', '', '', '', '', '', 'TOTAL GERAL', somaGeral.toFixed(2)].join(';') + '\n';
+    linhas.push([]);
+    linhas.push(['', '', '', '', '', '', 'TOTAL GERAL', somaGeral]);
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `inventario_${MESES[mesIndex - 1].toLowerCase()}_${ano}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const ws = XLSX.utils.aoa_to_sheet(linhas);
+
+    // Mescla o título para ficar visualmente melhor.
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
+
+    // Formatação das colunas.
+    ws['!cols'] = [
+      { wch: 32 }, // Produto
+      { wch: 28 }, // Fornecedor
+      { wch: 12 }, // Unidade
+      { wch: 14 }, // Quantidade
+      { wch: 18 }, // Valor Unitário
+      { wch: 12 }, // IPI
+      { wch: 16 }, // Frete
+      { wch: 18 }, // Total
+    ];
+
+    // Cabeçalho está na linha Excel 4; dados começam na linha 5.
+    const primeiraLinhaDados = 5;
+    const ultimaLinhaDados = 4 + produtos.length;
+    aplicarFormatacaoPlanilha(ws, primeiraLinhaDados, ultimaLinhaDados);
+
+    // Formata o total geral como número monetário.
+    const celulaTotalGeral = ws[`H${ultimaLinhaDados + 2}`];
+    if (celulaTotalGeral) celulaTotalGeral.z = FORMATO_REAL;
+
+    // Congela o cabeçalho da tabela.
+    ws['!freeze'] = { xSplit: 0, ySplit: 4 };
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventário');
+
+    XLSX.writeFile(
+      wb,
+      `inventario_${MESES[mesIndex - 1].toLowerCase()}_${ano}.xlsx`
+    );
   };
+
 
   const handleImprimir = () => {
     window.print();
@@ -280,10 +350,10 @@ export default function HistoricoInventario() {
                         size="medium"
                         variant={dataInventario.fechado ? "contained" : "outlined"}
                         startIcon={<Download />}
-                        onClick={() => gerarCSV(mesIndex)}
+                        onClick={() => gerarXLSX(mesIndex)}
                         disabled={!dataInventario.fechado}
                       >
-                        {dataInventario.fechado ? 'Exportar Planilha .CSV' : 'Fechamento Pendente'}
+                        {dataInventario.fechado ? 'Exportar Planilha .XLSX' : 'Fechamento Pendente'}
                       </Button>
                     )}
                   </CardContent>
@@ -303,7 +373,7 @@ export default function HistoricoInventario() {
               const mapaItens = new Map((dataInventario?.itens ?? []).map(i => [i.produtoId, i]));
 
               // Soma geral do mês, usada na tabela (linha de rodapé) e mantida
-              // consistente com o cálculo usado no CSV.
+              // consistente com o cálculo usado na planilha XLSX.
               let somaGeralMes = 0;
 
               return (
@@ -363,10 +433,10 @@ export default function HistoricoInventario() {
                             size="small"
                             variant="contained"
                             startIcon={<Download />}
-                            onClick={() => gerarCSV(mesIndex)}
+                            onClick={() => gerarXLSX(mesIndex)}
                             disabled={!dataInventario.fechado}
                           >
-                            Exportar .CSV
+                            Exportar .XLSX
                           </Button>
                         </Stack>
 
@@ -402,11 +472,11 @@ export default function HistoricoInventario() {
                                     <TableCell color="text.secondary">{p.fornecedor?.nome ?? '—'}</TableCell>
                                     <TableCell><Chip label={p.unidadeMedida} size="small" sx={{ fontSize: 11, height: 20 }} /></TableCell>
                                     <TableCell align="right">{qtd || '—'}</TableCell>
-                                    <TableCell align="right">{val ? `R$ ${val.toFixed(2)}` : '—'}</TableCell>
+                                    <TableCell align="right">{val ? formatBRL(val) : '—'}</TableCell>
                                     <TableCell align="right">{p.temIpi ? `${ipiPercent}%` : <Typography variant="caption" color="text.disabled">—</Typography>}</TableCell>
-                                    <TableCell align="right">{p.temFrete && freteTotal ? `R$ ${freteTotal.toFixed(2)}` : p.temFrete ? 'R$ 0,00' : <Typography variant="caption" color="text.disabled">—</Typography>}</TableCell>
+                                    <TableCell align="right">{p.temFrete && freteTotal ? formatBRL(freteTotal) : p.temFrete ? formatBRL(0) : <Typography variant="caption" color="text.disabled">—</Typography>}</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 600 }}>
-                                      {total > 0 ? `R$ ${total.toFixed(2)}` : '—'}
+                                      {total > 0 ? formatBRL(total) : '—'}
                                     </TableCell>
                                   </TableRow>
                                 );
@@ -416,7 +486,7 @@ export default function HistoricoInventario() {
                                   TOTAL GERAL
                                 </TableCell>
                                 <TableCell align="right" sx={{ fontWeight: 700 }}>
-                                  {`R$ ${somaGeralMes.toFixed(2)}`}
+                                  {formatBRL(somaGeralMes)}
                                 </TableCell>
                               </TableRow>
                             </TableBody>
