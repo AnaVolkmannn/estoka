@@ -514,7 +514,7 @@ export default function LancarInventario() {
                     <Typography component="th" sx={{ display: 'table-cell', p: 1.5, fontWeight: 700, fontSize: '0.875rem' }}>Produto</Typography>
                     <Typography component="th" sx={{ display: 'table-cell', p: 1.5, fontWeight: 700, fontSize: '0.875rem', width: 180 }}>Valor unitário (R$)</Typography>
                     <Typography component="th" sx={{ display: 'table-cell', p: 1.5, fontWeight: 700, fontSize: '0.875rem', width: 140 }}>IPI Unitário (%)</Typography>
-                    <Typography component="th" sx={{ display: 'table-cell', p: 1.5, fontWeight: 700, fontSize: '0.875rem', width: 160 }}>Frete Unitário (%)</Typography>
+                    <Typography component="th" sx={{ display: 'table-cell', p: 1.5, fontWeight: 700, fontSize: '0.875rem', width: 160 }}>Frete (Valor em R$ por pc)</Typography>
                     <Typography component="th" sx={{ display: 'table-cell', p: 1.5, fontWeight: 700, fontSize: '0.875rem', width: 200 }}>Atualizado em</Typography>
                   </TableRow>
                 </TableHead>
@@ -592,7 +592,7 @@ export default function LancarInventario() {
                               }}
                               slotProps={{
                                 input: {
-                                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                                  endAdornment: <InputAdornment position="start">R$</InputAdornment>,
                                 } as any,
                               }}
                             />
